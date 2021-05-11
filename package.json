@@ -1,0 +1,24 @@
+{
+  "name": "node-task-app",
+  "version": "1.0.0",
+  "description": "1. install mongo DB and use the command to start it:    .\\OneDrive\\Documents\\work\\servers\\mongodb-server\\bin\\mongod.exe --dbpath=OneDrive/Documents/work/servers/mongodb-data 2. install the mongo db admin tool robo3T",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/larisaturcu/node-task-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/larisaturcu/node-task-app/issues"
+  },
+  "homepage": "https://github.com/larisaturcu/node-task-app#readme",
+  "dependencies": {
+    "mongodb": "^3.6.6",
+    "mongoose": "^5.12.8"
+  }
+}
