@@ -1,13 +1,24 @@
 const express = require('express')
 require('./db/mongoose')
 
-
 const userRouter = require('./routers/user')
 const taskRouter = require('./routers/task')
 
 const app = express()
 const port = process.env.PORT || 3000
 
+
+// app.use((req, res, next) => {
+//     if (req.method === 'GET') {
+//         res.send('GET requests are disabled')
+//     } else {
+//         next()
+//     }
+// })
+
+// app.use((req, res, next)=> {
+//     res.status(503).send('Site is in maintenance')
+// })
 app.use(express.json())
 app.use(userRouter)
 app.use(taskRouter)
@@ -18,15 +29,15 @@ app.listen(port, () => {
     console.log('server is up');
 })
 
+// const jwt = require('jsonwebtoken')
 // const myFunc = async () => {
-//  const password = 'Red12345!'
-//  const salt = bcrypt.genSaltSync(10);
-//  const hashedPassword = await bcrypt.hash(password, salt)
+//     const token = jwt.sign({_id: 'abc123'}, 'thisismynewcourse', {expiresIn: '0 seconds'})
+//     console.log(token)
 
-// const isMatch = await bcrypt.compare('Red12345!', hashedPassword);
-// console.log(isMatch)
-
-//  return hashedPassword;
+//     const data = jwt.verify(token, 'thisismynewcourse')
+//     console.log("data ")
+//     console.log(data)
 // }
+
 
 // myFunc()

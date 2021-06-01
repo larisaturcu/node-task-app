@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -21,7 +22,8 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        unique: true
     },
     password: {
         type: String,
@@ -32,9 +34,42 @@ const userSchema = new mongoose.Schema({
                 throw new Error('Password must not contain the word password');
             }
         }
-    }
+    },
+    tokens: [{
+        token :{
+        type: String,
+        required: true,
+       }
+    }]
 })
+// static methods available for the class User
+userSchema.statics.findByCredentials = async (email, password) => {
+    const user = await User.findOne({email});
+    if (!user) {
+        throw new Error('Unable to login')
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+        throw new Error('Unable to login')
+    }
+    return user;
 
+}
+
+// methods created for the user instance
+userSchema.methods.generateToken = async  function () {
+    // this is declared as a standard function because we need to access the .this of the user instance
+    const user = this
+    const token = jwt.sign({_id : user._id.toString()}, 'thisismynewcourse', {expiresIn: '1 day'})
+    user.tokens = user.tokens.concat({token}) // add the generated token to the list of tokens of the user
+    
+    await user.save()
+    
+    return token
+
+}
+
+// hash the plain text pass before saving
 userSchema.pre('save', async function (next) {
     const user = this
     if (user.isModified('password')) {
