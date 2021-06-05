@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const Task = require('../models/task')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -42,6 +43,14 @@ const userSchema = new mongoose.Schema({
        }
     }]
 })
+
+// setup relationship between user and its tasks
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField:'_id',
+    foreignField: 'owner'
+})
+
 // static methods available for the class User
 userSchema.statics.findByCredentials = async (email, password) => {
     const user = await User.findOne({email});
@@ -64,17 +73,33 @@ userSchema.methods.generateToken = async  function () {
     user.tokens = user.tokens.concat({token}) // add the generated token to the list of tokens of the user
     
     await user.save()
-    
+
     return token
 
 }
 
+
+userSchema.methods.toJSON =  function () {
+    // this is declared as a standard function because we need to access the .this of the user instance
+    const user = this
+    const userObject = user.toObject()
+    delete userObject.password
+    delete userObject.tokens
+    return userObject
+}
 // hash the plain text pass before saving
 userSchema.pre('save', async function (next) {
     const user = this
     if (user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8);
     }
+    next()
+})
+
+// hash the plain text pass before saving
+userSchema.pre('remove', async function (next) {
+    const user = this
+    await Task.deleteMany({owner: user._id})
     next()
 })
 
