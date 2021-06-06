@@ -5,23 +5,44 @@ const router = new express.Router()
 
 
 router.post('/tasks', auth, async (req, res) => {
-    const task = new Task(req.body);
+    const task = new Task({
+        ...req.body,
+        owner: req.user._id
+    });
     try {
-        task.owner = req.user;
         await task.save()
         res.status(201).send(task)
     } catch (e) {
         res.status(400).send(e);
     }
-  })
+})
 
-router.get('/tasks',auth, async (req, res) => {
+// GET /tasks?completed={boolean}
+// GET /tasks?limit=10&skip=0
+// GET /tasks?sortBy=createdAt:desc
+router.get('/tasks', auth, async (req, res) => {
+    const match = {}
+    if (req.query.completed) {
+        match.completed = req.query.completed === 'true'
+    }
+    const sort = {}
+    
+    if (req.query.sortBy) {
+        const parts = req.query.sortBy.split(':')
+        sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
+    }
+    //const limit = req.query.limit ? parseInt(req.query.limit) : 2
+    //const skip = req.query.skip ? parseInt(req.query.skip) : 0
     try {
-        // V1
-        //const tasks = await Task.find({owner: req.user.id});
-        //res.send(tasks);
-        //V2
-        await req.user.populate('tasks').execPopulate();
+        await req.user.populate({
+            path: 'tasks',
+            match,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip),
+                sort
+            }
+        }).execPopulate();
         res.send(req.user.tasks)
     } catch (e) {
         res.status(500).send(e)
@@ -40,7 +61,7 @@ router.get('/tasks/all', async (req, res) => {
 router.get('/tasks/:id', auth, async (req, res) => {
     const _id = req.params.id;
     try {
-        const task = await Task.findOne({_id, owner: req.user.id})
+        const task = await Task.findOne({ _id, owner: req.user.id })
         if (!task) {
             return res.status(404).send();
         }
@@ -53,19 +74,19 @@ router.get('/tasks/:id', auth, async (req, res) => {
 
 router.patch('/tasks/:id', auth, async (req, res) => {
     const updates = Object.keys(req.body)
-    const allowedUpdated= ['description', 'completed']
-    const isValidOperation = updates.every((update)=> allowedUpdated.includes(update))
+    const allowedUpdated = ['description', 'completed']
+    const isValidOperation = updates.every((update) => allowedUpdated.includes(update))
 
     if (!isValidOperation) {
-        return res.status(400).send({error: 'Invalid updates'});
+        return res.status(400).send({ error: 'Invalid updates' });
     }
 
     try {
-        const task = await Task.findOne({_id: req.params.id, owner: req.user.id})
+        const task = await Task.findOne({ _id: req.params.id, owner: req.user.id })
         if (!task) {
             return res.status(404).send();
         }
-        updates.forEach( (update) => task[update] = req.body[update])
+        updates.forEach((update) => task[update] = req.body[update])
         await task.save()
 
         res.send(task);
@@ -76,10 +97,10 @@ router.patch('/tasks/:id', auth, async (req, res) => {
 
 
 router.delete('/tasks/:id', auth, async (req, res) => {
-  
+
     try {
         // const task = await Task.findByIdAndRemove(req.params.id);
-        const task = await Task.findOne({_id: req.params.id, owner: req.user.id})
+        const task = await Task.findOne({ _id: req.params.id, owner: req.user.id })
         await task.delete();
 
         if (!task) {

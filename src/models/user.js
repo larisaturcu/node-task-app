@@ -42,6 +42,8 @@ const userSchema = new mongoose.Schema({
         required: true,
        }
     }]
+}, {
+    timestamps: true
 })
 
 // setup relationship between user and its tasks
