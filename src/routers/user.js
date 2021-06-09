@@ -4,6 +4,7 @@ const sharp = require('sharp')
 
 const auth = require('../middleware/auth')
 const User = require('../models/user')
+const { sendWelcomeEmail , sendCancelEmail } = require('../emails/account')
 const router = new express.Router()
 
 const upload = multer({
@@ -21,9 +22,9 @@ const upload = multer({
 
 router.post('/users', async (req, res) => {
     const user = new User(req.body);
-    console.log(user)
     try {
-        await user.save() // this can be removed as the save method is also called inside generate token
+        await user.save()
+        sendWelcomeEmail(user.email, user.name)
         const token = await user.generateToken();
         res.status(201).send({ user, token })
     } catch (e) {
@@ -91,9 +92,11 @@ router.patch('/users/me', auth, async (req, res) => {
 
 })
 
-router.delete('/users/me', async (req, res) => {
+router.delete('/users/me', auth, async (req, res) => {
     try {
+        console.log('delete user')
         await req.user.remove()
+        sendCancelEmail(req.user.email, req.user.name)
         res.send(req.user);
     } catch (e) {
         res.status(500).send(e)
